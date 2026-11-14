@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { margin: 0; background: #17191c; color: #ecebe7; }
+.toolbar { display: grid; height: 36px; width: 36px; place-items: center; border-radius: 9px; color: #92958d; transition: .15s; }
+.toolbar:hover { color: white; background: rgb(255 255 255 / .06); }
