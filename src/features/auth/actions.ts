@@ -9,7 +9,12 @@ export async function signIn(formData: FormData) {
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
   });
-  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  if (error) {
+    const message = error.message === "fetch failed"
+      ? "Could not reach Supabase. Check your internet connection and confirm that your Supabase project is active."
+      : error.message;
+    redirect(`/login?error=${encodeURIComponent(message)}`);
+  }
   redirect("/");
 }
 

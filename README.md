@@ -1,6 +1,6 @@
-# Habit Harbor
+# Life Tracker
 
-A Next.js App Router starter for a modular habit tracker, backed by Supabase Postgres and Supabase Auth. Diary and finance can be added as separate feature modules without coupling them to habit records.
+A Next.js App Router app for habit tracking, daily journaling, goal planning, and expense tracking. It uses Supabase Postgres and Supabase Auth. Each area has a separate feature module.
 
 ## Free stack setup
 
@@ -22,7 +22,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-Create a free Supabase project, open **SQL Editor**, and run `supabase/schema.sql`. If you already ran an earlier copy of that schema, run `supabase/migrations/002_auth_permissions.sql` instead. In Supabase Auth, enable email/password; set the Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to the redirect URL allow list (and your deployed callback URL later). The app loads habits and the last 120 days of completed logs for the signed-in user, and batches checkbox changes before saving. Do not expose the service-role key in the browser. Deploy by pushing the project to GitHub, importing it into Vercel Hobby, and setting the same environment variables in Vercel.
+Create a free Supabase project, open **SQL Editor**, and run `supabase/schema.sql`. If the existing project already has the habit tables, run migrations `002_auth_permissions.sql` and `003_journal_goals_budgets.sql` as needed. In Supabase Auth, enable email/password; set the Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to the redirect URL allow list (and your deployed callback URL later). The app loads data for the signed-in user, batches habit checkbox changes before saving, and saves journal entries, goals, expenses, and budgets with authenticated server actions. Do not expose the service-role key in the browser. Deploy by pushing the project to GitHub, importing it into Vercel Hobby, and setting the same environment variables in Vercel.
 
 Supabase Auth is used instead of NextAuth so the same identity/session system works directly with Postgres row level security. Prisma is intentionally omitted: direct Supabase queries keep RLS enforcement in the database and avoid maintaining a second schema/migration path. Supabase currently lists 500 MB database storage in Free and notes inactive free projects may pause; Vercel Hobby is a free tier aimed at personal projects and has usage caps. Check current limits before depending on it for a production business.
 
@@ -39,19 +39,17 @@ src/
   lib/
     supabase/            # server/client Supabase factories
   features/
-    habits/
-      components/        # dashboard, grid, add/edit dialog
-      actions/           # authenticated server actions
-      data/              # repositories and domain types
-    diary/               # future independent module
-    finance/             # future independent module
+    habits/              # habit grid, calendar, insights, actions
+    journal/             # daily notebook and save action
+    goals/               # recurring goals linked to habits
+    finance/             # expenses and monthly budget
 supabase/
   schema.sql
 ```
 
 ## Schema and isolation
 
-`supabase/schema.sql` links records to `auth.users`, keeps habit definitions separate from daily logs, and includes independent diary and transaction tables for future modules. Every user-owned table has RLS policies based on `auth.uid()`. Habit logs use `(habit_id, logged_on)` as their key, so an upsert can safely represent either state. Transactions store integer minor units (for example cents) to avoid floating point currency errors.
+`supabase/schema.sql` links records to `auth.users`, keeps habit definitions separate from daily logs, and includes diary, goals, transactions, and monthly budgets. Every user-owned table has RLS policies based on `auth.uid()`. Habit logs use `(habit_id, logged_on)` as their key, so an upsert can safely represent either state. Money uses integer minor units (paise) to avoid floating point errors. Existing databases can add the new feature tables with migration `003_journal_goals_budgets.sql`.
 
 ## Efficient grid updates
 

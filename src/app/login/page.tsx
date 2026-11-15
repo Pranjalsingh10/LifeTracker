@@ -5,7 +5,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   return <main className="grid min-h-screen place-items-center bg-[#111214] px-4 text-zinc-100">
     <div className="w-full max-w-md rounded-2xl border border-white/[.08] bg-[#17181b] p-7">
-      <div className="mb-7 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#342d28] text-[#f5aa71]"><Flower2 size={19}/></span><span className="font-semibold">daybloom</span></div>
+      <div className="mb-7 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#342d28] text-[#f5aa71]"><Flower2 size={19}/></span><span className="font-semibold">Life Tracker</span></div>
       <h1 className="text-2xl font-semibold">Welcome back</h1><p className="mt-2 text-sm text-zinc-400">Sign in or create an account to keep your habits private.</p>
       {params.error && <p role="alert" className="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-300">{params.error}</p>}
       {params.message && <p role="status" className="mt-4 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-300">{params.message}</p>}

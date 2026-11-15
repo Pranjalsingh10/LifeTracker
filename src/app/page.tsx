@@ -1,6 +1,9 @@
 import { HabitDashboard } from "@/features/habits/components/habit-dashboard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import type { JournalRecord } from "@/features/journal/components/journal-view";
+import type { GoalRecord } from "@/features/goals/components/goals-view";
+import type { ExpenseRecord } from "@/features/finance/components/expenses-view";
 
 export default async function Home() {
   const supabase = await createSupabaseServerClient();
@@ -65,8 +68,26 @@ export default async function Home() {
     created_at: toDateKey(dateInKolkata(new Date(h.created_at))),
     completed_dates: completedByHabit.get(h.id) ?? [],
   }));
+  const monthStart = `${todayKey.slice(0, 7)}-01`;
+  const nextMonth = new Date(`${monthStart}T12:00:00`);
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  const nextMonthStart = toDateKey(dateInKolkata(nextMonth));
+  const [journalResult, goalsResult, goalHabitsResult, expensesResult, budgetResult] = await Promise.all([
+    supabase.from("diary_entries").select("id,entry_date,title,body,mood,updated_at").eq("user_id", user.id).order("entry_date", { ascending: false }).limit(180),
+    supabase.from("goals").select("id,title,details,period,created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
+    supabase.from("goal_habits").select("goal_id,habit_id"),
+    supabase.from("transactions").select("id,product,amount_minor,currency,occurred_on,spent_at,payment_method,created_at").eq("user_id", user.id).eq("kind", "expense").gte("occurred_on", monthStart).lt("occurred_on", nextMonthStart).order("occurred_on", { ascending: false }).order("spent_at", { ascending: false }).limit(500),
+    supabase.from("monthly_budgets").select("amount_minor").eq("user_id", user.id).eq("month_start", monthStart).maybeSingle(),
+  ]);
+  const featureTablesReady = !journalResult.error && !goalsResult.error && !goalHabitsResult.error && !expensesResult.error && !budgetResult.error;
+  const habitIdsByGoal = new Map<string, string[]>();
+  for (const link of goalHabitsResult.data ?? []) habitIdsByGoal.set(link.goal_id, [...(habitIdsByGoal.get(link.goal_id) ?? []), link.habit_id]);
+  const journalEntries = (journalResult.data ?? []) as JournalRecord[];
+  const goals = (goalsResult.data ?? []).map(goal => ({ ...goal, period: goal.period as GoalRecord["period"], habit_ids: habitIdsByGoal.get(goal.id) ?? [] })) as GoalRecord[];
+  const expenses = (expensesResult.data ?? []) as ExpenseRecord[];
+  const monthlyBudgetMinor = Number(budgetResult.data?.amount_minor ?? 0);
   const displayName = String(user.user_metadata?.display_name || user.email?.split("@")[0] || "Friend");
-  return <HabitDashboard initialHabits={initialHabits} todayKey={todayKey} accountCreatedDate={accountCreatedDate} displayName={displayName} />;
+  return <HabitDashboard initialHabits={initialHabits} todayKey={todayKey} accountCreatedDate={accountCreatedDate} displayName={displayName} initialEntries={journalEntries} initialGoals={goals} initialExpenses={expenses} initialBudgetMinor={monthlyBudgetMinor} monthStart={monthStart} featureTablesReady={featureTablesReady} />;
 }
 
 function DatabaseSetupNotice() {

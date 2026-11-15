@@ -7,6 +7,11 @@ export async function proxy(request: NextRequest) {
   if (!url || !key) return NextResponse.next({ request });
 
   let response = NextResponse.next({ request });
+  // There is no session to refresh for signed-out visitors. Skipping this
+  // request also keeps public pages and login screens fast during outages.
+  const hasSessionCookie = request.cookies.getAll().some(({ name }) => /^sb-.+-auth-token(?:\.\d+)?$/.test(name));
+  if (!hasSessionCookie) return response;
+
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
