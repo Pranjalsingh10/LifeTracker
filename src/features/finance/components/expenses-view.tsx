@@ -30,7 +30,7 @@ export function ExpensesView({ todayKey, monthStart, initialExpenses, initialBud
     setBusy(true); setMessage("");
     const result = await saveMonthlyBudget(monthStart, minor);
     setBusy(false);
-    if (!result.ok) { setMessage(result.error); return; }
+    if (!result.ok) { setMessage(result.error ?? "Could not save the monthly budget."); return; }
     setBudget(minor); setMessage("Monthly budget saved.");
   };
   const add = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -40,13 +40,13 @@ export function ExpensesView({ todayKey, monthStart, initialExpenses, initialBud
     setBusy(true); setMessage("");
     const result = await addExpense({ product, amountMinor: minor, date, time, paymentMethod });
     setBusy(false);
-    if (!result.ok) { setMessage(result.error); return; }
+    if (!result.ok) { setMessage(result.error ?? "Could not add this expense."); return; }
     setExpenses(items => [result.expense as ExpenseRecord, ...items].sort((a, b) => `${b.occurred_on} ${b.spent_at}`.localeCompare(`${a.occurred_on} ${a.spent_at}`)));
     setProduct(""); setAmount(""); setDate(todayKey); setTime(timeNow()); setMessage("Expense added.");
   };
   const remove = async (expense: ExpenseRecord) => {
     const result = await deleteExpense(expense.id);
-    if (!result.ok) { setMessage(result.error); return; }
+    if (!result.ok) { setMessage(result.error ?? "Could not delete this expense."); return; }
     setExpenses(items => items.filter(item => item.id !== expense.id));
   };
 
