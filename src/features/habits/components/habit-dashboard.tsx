@@ -9,6 +9,7 @@ import { HabitActionMenu, HabitCalendar, HabitInsights, HabitsTable } from "@/fe
 import { JournalView, type JournalRecord } from "@/features/journal/components/journal-view";
 import { GoalsView, type GoalRecord } from "@/features/goals/components/goals-view";
 import { ExpensesView, type ExpenseRecord, type ExpenseTypeRecord } from "@/features/finance/components/expenses-view";
+import { BrandMark } from "@/components/brand-mark";
 
 type Habit = HabitView;
 type HabitRecord = { id: string; name: string; emoji: string; color: string; category: string; target_days: number; notes: string | null; created_at: string; completed_dates: string[] };
@@ -117,8 +118,7 @@ export function HabitDashboard({ initialHabits, todayKey, accountCreatedDate, di
 
   return <main className="min-h-screen bg-[#17191c] text-[#ecebe7]">
     <aside className={`${sidebarOpen ? "translate-x-0" : "-translate-x-full"} fixed inset-y-0 left-0 z-30 flex w-[248px] flex-col border-r border-white/[.07] bg-[#1d2023] px-5 py-5 transition-transform md:translate-x-0`}>
-      <div className="flex items-center gap-3 px-2"><div className="grid h-10 w-10 place-items-center rounded-[15px] bg-[#342d28] text-[#f5aa71]"><Flower2 size={22}/></div><span className="text-[21px] font-semibold tracking-[-.04em]">Life Tracker</span><button aria-label="Close menu" onClick={() => setSidebarOpen(false)} className="ml-auto text-[#9a9a91] md:hidden"><X size={18}/></button></div>
-      <button className="mt-9 flex h-11 items-center justify-between rounded-xl border border-white/[.08] px-3 text-left text-sm text-[#cac9c2] hover:bg-white/[.04]"><span className="flex items-center gap-2.5"><span className="grid h-6 w-6 place-items-center rounded-lg bg-[#2e3931] text-[11px]">ðŸŒ¿</span> My personal space</span><ChevronDown size={15} className="text-[#898b84]"/></button>
+      <div className="flex items-center gap-3 px-2"><div className="grid h-10 w-10 place-items-center rounded-[15px] bg-[#342d28] text-[#c4f67a]"><BrandMark className="h-7 w-7"/></div><span className="text-[21px] font-semibold tracking-[-.04em]">Life Tracker</span><button aria-label="Close menu" onClick={() => setSidebarOpen(false)} className="ml-auto text-[#9a9a91] md:hidden"><X size={18}/></button></div>
       <p className="mb-2 mt-9 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#777a76]">Workspace</p>
       <nav className="space-y-1">{[["Today", ListChecks], ["Habits", Flower2], ["Calendar", CalendarDays], ["Insights", Activity]].map(([name, Icon]: any) => <button key={name} onClick={() => { setActiveTab(name); setSidebarOpen(false); }} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition ${activeTab === name ? "bg-[#342d28] font-medium text-[#f4ad7a]" : "text-[#a4a59e] hover:bg-white/[.04] hover:text-[#e4e2dc]"}`}><Icon size={17} strokeWidth={1.8}/>{name}{name === "Today" && <span className="ml-auto rounded-full bg-white/[.08] px-2 py-0.5 text-[10px] text-[#c4c4bd]">{habits.length}</span>}</button>)}</nav>
       <p className="mb-2 mt-8 px-3 text-[10px] font-semibold uppercase tracking-[.16em] text-[#777a76]">Your space</p>
