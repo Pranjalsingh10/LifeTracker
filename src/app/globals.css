@@ -6,3 +6,50 @@ html, body { min-height: 100%; }
 body { margin: 0; background: #17191c; color: #ecebe7; }
 .toolbar { display: grid; height: 36px; width: 36px; place-items: center; border-radius: 9px; color: #92958d; transition: .15s; }
 .toolbar:hover { color: white; background: rgb(255 255 255 / .06); }
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="light"] body { background: #f4f6f8; color: #202833; }
+:root[data-theme="light"] [class*="bg-[#17191c]"] { background-color: #f4f6f8 !important; }
+:root[data-theme="light"] [class*="bg-[#1d2023]"],
+:root[data-theme="light"] [class*="bg-[#202326]"],
+:root[data-theme="light"] [class*="bg-[#222528]"] { background-color: #ffffff !important; }
+:root[data-theme="light"] [class*="bg-[#191b1e]"],
+:root[data-theme="light"] [class*="bg-[#25272a]"],
+:root[data-theme="light"] [class*="bg-[#26292d]"],
+:root[data-theme="light"] [class*="bg-[#292c30]"],
+:root[data-theme="light"] [class*="bg-[#34373b]"],
+:root[data-theme="light"] [class*="bg-[#282a2d]"],
+:root[data-theme="light"] [class*="bg-[#34383d]"] { background-color: #e5e9ed !important; }
+:root[data-theme="light"] [class*="bg-[#252b25]"],
+:root[data-theme="light"] [class*="bg-[#222a23]"],
+:root[data-theme="light"] [class*="bg-[#30352c]"] { background-color: #eaf0e3 !important; }
+:root[data-theme="light"] [class*="bg-[#342d28]"] { background-color: #f6e9df !important; }
+:root[data-theme="light"] [class*="bg-[#2d2223]"] { background-color: #fae8e8 !important; }
+:root[data-theme="light"] [class*="bg-white/[."] { background-color: #eef1f4 !important; }
+:root[data-theme="light"] [class*="border-white/"] { border-color: #dce1e6 !important; }
+:root[data-theme="light"] [class*="text-[#ecebe7]"],
+:root[data-theme="light"] [class*="text-[#f1f0eb]"],
+:root[data-theme="light"] [class*="text-[#f0efe9]"],
+:root[data-theme="light"] [class*="text-[#ebeae4]"],
+:root[data-theme="light"] [class*="text-[#e7e6e0]"],
+:root[data-theme="light"] [class*="text-[#e3e2dc]"],
+:root[data-theme="light"] [class*="text-[#d7d9d2]"],
+:root[data-theme="light"] [class*="text-[#d2d4cc]"],
+:root[data-theme="light"] [class*="text-[#e9e9e4]"],
+:root[data-theme="light"] [class~="text-white"] { color: #202833 !important; }
+:root[data-theme="light"] [class*="text-[#92958d]"],
+:root[data-theme="light"] [class*="text-[#999c95]"],
+:root[data-theme="light"] [class*="text-[#a5a69f]"],
+:root[data-theme="light"] [class*="text-[#a4a59e]"],
+:root[data-theme="light"] [class*="text-[#a6a9a1]"],
+:root[data-theme="light"] [class*="text-[#858981]"],
+:root[data-theme="light"] [class*="text-[#81847d]"],
+:root[data-theme="light"] [class*="text-[#777a76]"],
+:root[data-theme="light"] [class*="text-[#777b75]"],
+:root[data-theme="light"] [class*="text-[#9d9f98]"],
+:root[data-theme="light"] [class*="text-[#aeb0a8]"] { color: #596574 !important; }
+:root[data-theme="light"] [class*="text-[#c4f67a]"],
+:root[data-theme="light"] [class*="text-[#c9ff79]"] { color: #527719 !important; }
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea { color-scheme: light; }
