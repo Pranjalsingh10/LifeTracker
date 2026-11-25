@@ -11,6 +11,65 @@ const chartColors = ["#f28b55", "#b5f45f", "#8f70f5", "#45b8ac", "#f1c35b", "#e8
 const money = (minor: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(minor / 100);
 const timeNow = () => `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`;
 
+type PieSlice = { name: string; total: number; color: string; start: number; end: number; offsetX: number; offsetY: number };
+const piePoint = (angle: number, offsetX = 0, offsetY = 0) => ({ x: 160 + offsetX + 112 * Math.cos(angle), y: 92 + offsetY + 67 * Math.sin(angle) });
+const darken = (hex: string, amount = 0.48) => `#${[1, 3, 5].map(i => Math.round(parseInt(hex.slice(i, i + 2), 16) * amount).toString(16).padStart(2, "0")).join("")}`;
+
+function getPieSlices(items: { name: string; total: number }[], total: number): PieSlice[] {
+  const chartItems = items.length ? items : [{ name: "No spending yet", total: 1 }];
+  let angle = -Math.PI / 2;
+  return chartItems.map((item, index) => {
+    const sweep = total ? item.total / total * Math.PI * 2 : Math.PI * 2;
+    const middle = angle + sweep / 2;
+    const offset = chartItems.length > 1 ? 5 : 0;
+    const slice = { ...item, color: items.length ? chartColors[index % chartColors.length] : "#41464b", start: angle, end: angle + sweep, offsetX: Math.cos(middle) * offset, offsetY: Math.sin(middle) * offset * .68 };
+    angle += sweep;
+    return slice;
+  });
+}
+
+function sliceTopPath(slice: PieSlice) {
+  const start = piePoint(slice.start, slice.offsetX, slice.offsetY);
+  const end = piePoint(slice.end, slice.offsetX, slice.offsetY);
+  const sweep = slice.end - slice.start;
+  if (sweep > Math.PI * 2 - .001) {
+    const right = piePoint(0, slice.offsetX, slice.offsetY);
+    const left = piePoint(Math.PI, slice.offsetX, slice.offsetY);
+    return `M ${right.x} ${right.y} A 112 67 0 1 1 ${left.x} ${left.y} A 112 67 0 1 1 ${right.x} ${right.y} Z`;
+  }
+  const largeArc = sweep > Math.PI ? 1 : 0;
+  return `M ${160 + slice.offsetX} ${92 + slice.offsetY} L ${start.x} ${start.y} A 112 67 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
+}
+
+function sliceWallPaths(slice: PieSlice) {
+  const paths: string[] = [];
+  for (const shift of [-1, 0, 1]) {
+    const from = Math.max(slice.start, shift * Math.PI * 2);
+    const to = Math.min(slice.end, Math.PI + shift * Math.PI * 2);
+    if (to - from < .005) continue;
+    const steps = Math.max(3, Math.ceil((to - from) / (Math.PI / 18)));
+    const upper = Array.from({ length: steps + 1 }, (_, index) => piePoint(from + (to - from) * index / steps, slice.offsetX, slice.offsetY));
+    const lower = [...upper].reverse().map(point => ({ x: point.x, y: point.y + 27 }));
+    paths.push(`M ${upper.map(point => `${point.x} ${point.y}`).join(" L ")} L ${lower.map(point => `${point.x} ${point.y}`).join(" L ")} Z`);
+  }
+  return paths;
+}
+
+function ExpensePieChart({ items, total }: { items: { name: string; total: number }[]; total: number }) {
+  const slices = getPieSlices(items, total);
+  const detail = items.length ? items.map(item => `${item.name}: ${money(item.total)}`).join("; ") : "No expenses recorded yet";
+  return <svg className="h-auto w-full overflow-visible" viewBox="0 0 320 232" role="img" aria-label={`Exploded 3D pie chart of spending by type. Total ${money(total)}. ${detail}`}>
+    <defs>
+      <filter id="pie-shadow" x="-20%" y="-20%" width="150%" height="170%"><feDropShadow dx="0" dy="7" stdDeviation="5" floodColor="#000000" floodOpacity=".32"/></filter>
+      {slices.map((slice, index) => <linearGradient key={slice.name} id={`pie-top-${index}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ffffff" stopOpacity=".3"/><stop offset="45%" stopColor={slice.color}/><stop offset="100%" stopColor={darken(slice.color, .82)}/></linearGradient>)}
+    </defs>
+    <g filter="url(#pie-shadow)">
+      {slices.flatMap((slice, index) => sliceWallPaths(slice).map((path, wallIndex) => <path key={`wall-${index}-${wallIndex}`} d={path} fill={darken(slice.color)} stroke={darken(slice.color, .38)} strokeWidth="1"/>))}
+      {slices.map((slice, index) => <path key={slice.name} d={sliceTopPath(slice)} fill={`url(#pie-top-${index})`} stroke="var(--auth-panel)" strokeWidth="2.5" strokeLinejoin="round" className="expense-pie-slice"><title>{`${slice.name}: ${money(slice.total)}`}</title></path>)}
+    </g>
+  </svg>;
+}
+
 export function ExpensesView({ todayKey, monthStart, initialExpenses, initialExpenseTypes, initialBudgetMinor }: { todayKey: string; monthStart: string; initialExpenses: ExpenseRecord[]; initialExpenseTypes: ExpenseTypeRecord[]; initialBudgetMinor: number }) {
   const [expenses, setExpenses] = useState(initialExpenses);
   const [expenseTypes, setExpenseTypes] = useState(initialExpenseTypes);
@@ -39,13 +98,6 @@ export function ExpensesView({ todayKey, monthStart, initialExpenses, initialExp
     }
     return [...totals.entries()].map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
   }, [expenses]);
-  let chartPosition = 0;
-  const chartStops = spendingByType.map((item, index) => {
-    const start = chartPosition;
-    chartPosition += spent ? item.total / spent * 100 : 0;
-    return `${chartColors[index % chartColors.length]} ${start}% ${chartPosition}%`;
-  });
-  const pieBackground = spent ? `conic-gradient(${chartStops.join(",")})` : "#34383d";
   const availableTypes = [...defaultTypes, ...expenseTypes.map(type => type.name).filter(name => name.toLowerCase() !== "other" && !defaultTypes.some(item => item.toLowerCase() === name.toLowerCase()))];
 
   const saveBudget = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -97,8 +149,8 @@ export function ExpensesView({ todayKey, monthStart, initialExpenses, initialExp
       <article className={`rounded-2xl border p-5 ${remaining < 0 ? "border-[#643b3b] bg-[#2d2223]" : "border-[#394b34] bg-[#222a23]"}`}><p className="text-[10px] font-semibold uppercase tracking-wider text-[#a5ab9d]">{remaining < 0 ? "Over budget by" : "Left to spend"}</p><p className={`mt-3 text-2xl font-bold ${remaining < 0 ? "text-[#ff8888]" : "text-[#c4f67a]"}`}>{money(Math.abs(remaining))}</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-black/25"><div className={`h-full rounded-full transition-all ${remaining < 0 ? "bg-gradient-to-r from-[#ff9d59] to-[#ff6464]" : "bg-gradient-to-r from-[#36d399] to-[#c4f67a]"}`} style={{ width: `${used}%` }}/></div><p className="mt-1.5 text-right text-[9px] text-[#92958d]">{budget ? `${Math.round(spent / budget * 100)}% used` : "Set a budget to track your limit"}</p></article>
     </div>
 
-    <section className="grid min-w-0 gap-6 overflow-hidden rounded-2xl border border-white/[.08] bg-[#202326] p-5 sm:p-6 lg:grid-cols-[minmax(0,230px)_minmax(0,1fr)] lg:items-center">
-      <div className="min-w-0"><h3 className="flex items-center gap-2 text-sm font-semibold"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#342d28] text-[#f4ad7a]"><IndianRupee size={16}/></span>Spent by Type</h3><p className="mt-1 text-[10px] text-[#92958d]">Purchase totals for {monthLabel}</p><div className="relative mx-auto mt-5 aspect-square w-[min(58vw,210px)] [perspective:800px]" role="img" aria-label={`Spending by type this month. Total ${money(spent)}.`}><div className="absolute inset-x-0 top-3 aspect-square rounded-full opacity-80 blur-[1px]" style={{ background: pieBackground }}/><div className="absolute inset-0 grid place-items-center rounded-full shadow-[0_18px_25px_-12px_rgba(0,0,0,.7),inset_-10px_-8px_18px_rgba(0,0,0,.28),inset_7px_7px_16px_rgba(255,255,255,.22)] [transform:rotateX(22deg)]" style={{ background: pieBackground }}><div className="grid aspect-square w-[53%] place-items-center rounded-full bg-[#202326] text-center shadow-[inset_0_5px_12px_rgba(0,0,0,.42),0_2px_5px_rgba(255,255,255,.12)]"><div><p className="text-[9px] uppercase tracking-wider text-[#92958d]">Total spent</p><p className="mt-1 text-sm font-bold">{money(spent)}</p></div></div></div></div></div>
+    <section className="grid min-w-0 gap-6 overflow-hidden rounded-2xl border border-white/[.08] bg-[#202326] p-5 sm:p-6 lg:grid-cols-[minmax(0,290px)_minmax(0,1fr)] lg:items-center">
+      <div className="min-w-0"><h3 className="flex items-center gap-2 text-sm font-semibold"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#342d28] text-[#f4ad7a]"><IndianRupee size={16}/></span>Spent by Type</h3><p className="mt-1 text-[10px] text-[#92958d]">Purchase totals for {monthLabel}</p><div className="mx-auto mt-3 w-full max-w-[320px]"><ExpensePieChart items={spendingByType} total={spent}/></div><div className="mt-1 flex items-baseline justify-between border-t border-white/[.07] pt-3"><span className="text-[10px] uppercase tracking-wider text-[#92958d]">Total spent</span><strong className="text-sm font-bold text-[#f4ad7a]">{money(spent)}</strong></div></div>
       <div className="min-w-0"><p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#92958d]">Type breakdown</p>{spendingByType.length ? <div className="grid gap-2 sm:grid-cols-2">{spendingByType.map((item, index) => <div key={item.name} className="rounded-xl border border-white/[.06] bg-[#191b1e] p-3"><div className="flex items-center justify-between gap-2"><span className="flex min-w-0 items-center gap-2 truncate text-xs font-medium"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: chartColors[index % chartColors.length] }}/>{item.name}</span><span className="shrink-0 text-xs text-[#d8d9d2]">{money(item.total)}</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[.06]"><div className="h-full rounded-full" style={{ width: `${spent ? item.total / spent * 100 : 0}%`, backgroundColor: chartColors[index % chartColors.length] }}/></div><p className="mt-1 text-right text-[9px] text-[#858981]">{spent ? Math.round(item.total / spent * 100) : 0}%</p></div>)}</div> : <div className="grid min-h-28 place-items-center rounded-xl border border-dashed border-white/[.1] text-center text-xs text-[#92958d]">Add purchases to see your type breakdown.</div>}</div>
     </section>
 
